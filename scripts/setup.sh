@@ -15,6 +15,13 @@ fi
 
 if [[ -d "$REPO_DIR/.git" ]]; then
   echo "Using existing $REPO_DIR directory"
+  if [[ -n "$(git -C "$REPO_DIR" status --porcelain)" ]]; then
+    echo "Local changes detected in $REPO_DIR. Skipping auto-update pull."
+    echo "Commit/stash your changes, then run: git -C $REPO_DIR pull --ff-only"
+  else
+    echo "Pulling latest changes from origin/main..."
+    git -C "$REPO_DIR" pull --ff-only
+  fi
 else
   git clone https://github.com/beaudenison/steam-discord-verify.git "$REPO_DIR"
 fi

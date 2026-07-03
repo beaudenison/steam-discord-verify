@@ -123,6 +123,14 @@ Start/update:
 docker compose up -d --build
 ```
 
+Update existing install to latest `main`:
+
+```bash
+cd steam-discord-verify
+git pull --ff-only
+docker compose up -d --build
+```
+
 View logs:
 
 ```bash
@@ -142,6 +150,10 @@ docker compose down
 - Restrict role permissions and place bot role above verified role in Discord role hierarchy.
 
 ## Troubleshooting
+
+- Reran one-line install but changes are missing:
+	- If `steam-discord-verify` already existed on disk, old code may have been reused.
+	- Run `cd steam-discord-verify && git pull --ff-only && docker compose up -d --build`.
 
 - Slash commands not visible:
 	- Re-invite bot with `applications.commands` scope.
