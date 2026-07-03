@@ -22,6 +22,8 @@ import {
 } from "./steam.js";
 import { VerifySessionStore } from "./verifySession.js";
 
+const VERIFY_CHANNEL_STATUS_TTL_MS = 60 * 1000;
+
 const {
   DISCORD_BOT_TOKEN,
   DISCORD_CLIENT_ID,
@@ -111,7 +113,7 @@ function buildVerifyEmbed(guildName) {
     },
     {
       name: "Logged information",
-      value: "Steam profile, SteamID, and ban/warning status will be sent to verification logs."
+      value: "Steam profile, SteamID, and ban/warning status will be sent to admins channel of choice."
     }
   );
 }
@@ -162,7 +164,40 @@ async function postVerifyPrompt(guild) {
   });
 }
 
-function renderHtml(title, body) {
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function renderHtml(title, body, options = {}) {
+  const safeTitle = escapeHtml(title);
+  const safeBody = escapeHtml(body);
+  const safeGuildName = options.guildName ? escapeHtml(options.guildName) : "this server";
+  const guildInitial = safeGuildName.charAt(0).toUpperCase() || "S";
+  const guildIdentity = options.guildIconUrl
+    ? `<img class="guild-icon" src="${options.guildIconUrl}" alt="${safeGuildName} icon" />`
+    : `<div class="guild-icon guild-fallback" aria-label="${safeGuildName} icon">${guildInitial}</div>`;
+  const connectionRow = options.showConnectionHeader
+    ? `<div class="identity-row" role="img" aria-label="${safeGuildName} connected to Steam">
+        <div class="identity-block">
+          ${guildIdentity}
+          <span class="identity-label">${safeGuildName}</span>
+        </div>
+        <span class="link-symbol" aria-hidden="true">+</span>
+        <div class="identity-block">
+          <img class="steam-logo" src="https://store.steampowered.com/favicon.ico" alt="Steam logo" />
+          <span class="identity-label">Steam</span>
+        </div>
+      </div>`
+    : "";
+  const successChip = options.showSuccessChip
+    ? '<div class="status-chip"><span class="status-dot" aria-hidden="true"></span>Verification complete</div>'
+    : "";
+
   return `<!doctype html>
 <html>
   <head>
@@ -171,43 +206,142 @@ function renderHtml(title, body) {
     <title>${title}</title>
     <style>
       :root {
-        color-scheme: light;
+        color-scheme: dark;
+        --bg-1: #11131a;
+        --bg-2: #1a1d27;
+        --card: rgba(43, 45, 49, 0.94);
+        --card-border: rgba(87, 92, 102, 0.45);
+        --text-main: #f2f3f5;
+        --text-muted: #b5bac1;
+        --brand: #5865f2;
+        --brand-soft: rgba(88, 101, 242, 0.25);
+        --success: #3ba55d;
       }
       body {
         margin: 0;
-        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Helvetica, Arial, sans-serif;
-        background: radial-gradient(circle at top, #dceeff, #f5f9ff 45%, #ffffff);
-        color: #0b1f3a;
+        font-family: "gg sans", "Noto Sans", "Segoe UI", sans-serif;
+        background:
+          radial-gradient(1100px 500px at 0% -15%, rgba(88, 101, 242, 0.2), transparent 60%),
+          radial-gradient(900px 440px at 100% 0%, rgba(59, 165, 93, 0.18), transparent 58%),
+          linear-gradient(140deg, var(--bg-1) 0%, var(--bg-2) 60%, #1f2230 100%);
+        color: var(--text-main);
         min-height: 100vh;
         display: grid;
         place-items: center;
       }
       .card {
-        max-width: 560px;
-        margin: 16px;
-        border: 1px solid #bdd8ff;
-        background: #ffffff;
-        border-radius: 14px;
-        box-shadow: 0 10px 40px rgba(24, 72, 132, 0.15);
-        padding: 28px;
+        width: min(92vw, 640px);
+        margin: 24px;
+        border: 1px solid var(--card-border);
+        background: var(--card);
+        border-radius: 18px;
+        box-shadow: 0 26px 70px rgba(0, 0, 0, 0.45);
+        padding: 30px;
+        backdrop-filter: blur(7px);
+      }
+      .identity-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        margin: 0 0 18px;
+      }
+      .identity-block {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: rgba(31, 33, 36, 0.72);
+        border: 1px solid rgba(87, 92, 102, 0.4);
+        padding: 8px 12px;
+        border-radius: 999px;
+      }
+      .identity-label {
+        color: var(--text-muted);
+        font-size: 0.94rem;
+        letter-spacing: 0.01em;
+      }
+      .link-symbol {
+        display: inline-grid;
+        place-items: center;
+        width: 30px;
+        height: 30px;
+        border-radius: 999px;
+        border: 1px solid var(--brand-soft);
+        background: rgba(88, 101, 242, 0.16);
+        color: #d8ddff;
+        font-weight: 700;
       }
       h1 {
         margin: 0 0 10px;
-        font-size: 1.5rem;
+        font-size: clamp(1.35rem, 2vw, 1.7rem);
+        letter-spacing: 0.01em;
       }
       p {
         margin: 0;
-        line-height: 1.45;
+        line-height: 1.55;
+        color: var(--text-muted);
       }
       a {
-        color: #0f62d6;
+        color: #a6b0ff;
+      }
+      .guild-icon,
+      .steam-logo {
+        width: 30px;
+        height: 30px;
+        border-radius: 999px;
+        object-fit: cover;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+      }
+      .guild-fallback {
+        display: inline-grid;
+        place-items: center;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #ffffff;
+        background: linear-gradient(145deg, #5865f2, #3d4ac9);
+      }
+      .status-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0 0 12px;
+        border: 1px solid rgba(59, 165, 93, 0.45);
+        background: rgba(59, 165, 93, 0.15);
+        color: #c9f5d5;
+        border-radius: 999px;
+        padding: 7px 12px;
+        font-size: 0.85rem;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        font-weight: 700;
+      }
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: var(--success);
+        box-shadow: 0 0 12px rgba(59, 165, 93, 0.9);
+      }
+      @media (max-width: 560px) {
+        .card {
+          padding: 22px;
+        }
+        .identity-row {
+          flex-direction: column;
+          gap: 8px;
+        }
+        .link-symbol {
+          transform: rotate(90deg);
+        }
       }
     </style>
   </head>
   <body>
     <article class="card">
-      <h1>${title}</h1>
-      <p>${body}</p>
+      ${connectionRow}
+      ${successChip}
+      <h1>${safeTitle}</h1>
+      <p>${safeBody}</p>
     </article>
   </body>
 </html>`;
@@ -289,8 +423,49 @@ app.get("/auth/steam/return", async (req, res) => {
     store.setUserVerification(session.userId, session.guildId, steamInfo);
 
     const member = await guild.members.fetch(session.userId).catch(() => null);
-    if (member && guildConfig.verifiedRoleId) {
-      await member.roles.add(guildConfig.verifiedRoleId).catch(() => {});
+    const roleResult = {
+      status: "not_attempted",
+      details: "Verified role assignment was not attempted.",
+      roleLabel: guildConfig.verifiedRoleId ? `<@&${guildConfig.verifiedRoleId}>` : "(not configured)"
+    };
+
+    if (!guildConfig.verifiedRoleId) {
+      roleResult.status = "missing_config";
+      roleResult.details = "Verified role is not configured for this server.";
+    } else if (!member) {
+      roleResult.status = "member_not_found";
+      roleResult.details = "Could not find the Discord member to apply the verified role.";
+    } else {
+      const verifiedRole = await guild.roles.fetch(guildConfig.verifiedRoleId).catch(() => null);
+      const me = guild.members.me || (await guild.members.fetchMe().catch(() => null));
+
+      if (!verifiedRole) {
+        roleResult.status = "missing_role";
+        roleResult.details = "Configured verified role no longer exists.";
+      } else {
+        roleResult.roleLabel = `<@&${verifiedRole.id}>`;
+        const hasManageRoles = Boolean(me?.permissions.has(PermissionFlagsBits.ManageRoles));
+
+        if (!hasManageRoles) {
+          roleResult.status = "missing_permission";
+          roleResult.details = "Bot is missing the Manage Roles permission.";
+        } else if (!me || me.roles.highest.comparePositionTo(verifiedRole) <= 0) {
+          roleResult.status = "role_hierarchy";
+          roleResult.details = "Bot role is not high enough to assign the configured verified role.";
+        } else if (member.roles.cache.has(verifiedRole.id)) {
+          roleResult.status = "already_has_role";
+          roleResult.details = "Member already had the verified role.";
+        } else {
+          const addRoleError = await member.roles.add(verifiedRole).then(() => null).catch((error) => error);
+          if (addRoleError) {
+            roleResult.status = "apply_failed";
+            roleResult.details = `Failed to assign verified role: ${addRoleError.message}`;
+          } else {
+            roleResult.status = "applied";
+            roleResult.details = "Verified role was assigned successfully.";
+          }
+        }
+      }
     }
 
     const logsChannel = await guild.channels.fetch(guildConfig.logsChannelId).catch(() => null);
@@ -312,11 +487,40 @@ app.get("/auth/steam/return", async (req, res) => {
           { name: "Steam Name", value: steamInfo.personaName },
           { name: "SteamID", value: steamInfo.steamId },
           { name: "Steam Profile", value: steamInfo.profileUrl },
-          { name: "Ban / Warning Status", value: bansSummary }
+          { name: "Ban / Warning Status", value: bansSummary },
+          {
+            name: "Verified Role Status",
+            value: `${roleResult.roleLabel}\n${roleResult.details}`
+          }
         )
         .setThumbnail(steamInfo.avatar);
 
       await logsChannel.send({ embeds: [logEmbed] }).catch(() => {});
+    }
+
+    const verifyChannel = await guild.channels.fetch(session.channelId).catch(() => null);
+    if (verifyChannel && verifyChannel.type === ChannelType.GuildText) {
+      const roleApplied = roleResult.status === "applied" || roleResult.status === "already_has_role";
+      const verifyEmbed = baseEmbed(
+        roleApplied ? "Verification successful" : "Verification completed with role issue",
+        roleApplied
+          ? `<@${session.userId}> connected their Steam account and now has ${roleResult.roleLabel}.`
+          : `<@${session.userId}> connected their Steam account, but the verified role could not be applied automatically.`
+      ).addFields(
+        { name: "Steam Name", value: steamInfo.personaName, inline: true },
+        { name: "SteamID", value: steamInfo.steamId, inline: true },
+        {
+          name: "Role Result",
+          value: `${roleResult.roleLabel}\n${roleResult.details}`
+        }
+      );
+
+      const sentMessage = await verifyChannel.send({ embeds: [verifyEmbed] }).catch(() => null);
+      if (sentMessage) {
+        setTimeout(() => {
+          sentMessage.delete().catch(() => {});
+        }, VERIFY_CHANNEL_STATUS_TTL_MS);
+      }
     }
 
     return res
@@ -324,7 +528,13 @@ app.get("/auth/steam/return", async (req, res) => {
       .send(
         renderHtml(
           "Verification successful",
-          "Your Steam account is now linked. Return to Discord and you should have access shortly."
+          "Your Steam account is now linked. Return to Discord and you should have access shortly.",
+          {
+            showConnectionHeader: true,
+            showSuccessChip: true,
+            guildName: guild.name,
+            guildIconUrl: guild.iconURL({ size: 128 })
+          }
         )
       );
   } catch (error) {
