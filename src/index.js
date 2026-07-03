@@ -35,6 +35,20 @@ if (!DISCORD_BOT_TOKEN || !DISCORD_CLIENT_ID || !PUBLIC_URL || !STEAM_WEB_API_KE
   process.exit(1);
 }
 
+function normalizePublicUrl(value) {
+  const trimmed = String(value).trim();
+  const withProtocol = /^https?:\/\//i.test(trimmed)
+    ? trimmed
+    : /^(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/i.test(trimmed)
+      ? `http://${trimmed}`
+      : `https://${trimmed}`;
+
+  const parsed = new URL(withProtocol);
+  return parsed.toString().replace(/\/$/, "");
+}
+
+const PUBLIC_BASE_URL = normalizePublicUrl(PUBLIC_URL);
+
 const app = express();
 const store = new ConfigStore();
 const sessions = new VerifySessionStore();
@@ -222,9 +236,9 @@ app.get("/verify/start", (req, res) => {
   }
 
   const nonce = sessions.createNonce(token);
-  const returnTo = `${PUBLIC_URL.replace(/\/$/, "")}/auth/steam/return?nonce=${encodeURIComponent(nonce)}`;
+  const returnTo = `${PUBLIC_BASE_URL}/auth/steam/return?nonce=${encodeURIComponent(nonce)}`;
   const openIdUrl = buildSteamOpenIdRedirect({
-    realm: PUBLIC_URL.replace(/\/$/, ""),
+    realm: PUBLIC_BASE_URL,
     returnTo
   });
 
@@ -445,15 +459,19 @@ client.on("interactionCreate", async (interaction) => {
         channelId: interaction.channelId
       });
 
-      const verifyUrl = `${PUBLIC_URL.replace(/\/$/, "")}/verify/start?token=${encodeURIComponent(token)}`;
+      const verifyUrl = `${PUBLIC_BASE_URL}/verify/start?token=${encodeURIComponent(token)}`;
+      const verifyLinkRow = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setStyle(ButtonStyle.Link).setURL(verifyUrl).setLabel("Open Steam verification")
+      );
 
       await interaction.reply({
         embeds: [
           baseEmbed(
             "Start Steam verification",
-            `[Click here to verify with Steam](${verifyUrl})\n\nThis link expires in 10 minutes.`
+            `Use the button below to start Steam verification.\n\nIf the button does not work, open this URL:\n<${verifyUrl}>\n\nThis link expires in 10 minutes.`
           )
         ],
+        components: [verifyLinkRow],
         ephemeral: true
       });
       return;
