@@ -22,7 +22,7 @@ import {
 } from "./steam.js";
 import { VerifySessionStore } from "./verifySession.js";
 
-const VERIFY_CHANNEL_STATUS_TTL_MS = 60 * 1000;
+const VERIFY_CHANNEL_STATUS_TTL_MS = 3 * 1000;
 
 const {
   DISCORD_BOT_TOKEN,
@@ -187,7 +187,7 @@ function renderHtml(title, body, options = {}) {
           ${guildIdentity}
           <span class="identity-label">${safeGuildName}</span>
         </div>
-        <span class="link-symbol" aria-hidden="true">+</span>
+        <span class="link-word" aria-hidden="true">linked to</span>
         <div class="identity-block">
           <img class="steam-logo" src="https://store.steampowered.com/favicon.ico" alt="Steam logo" />
           <span class="identity-label">Steam</span>
@@ -248,25 +248,18 @@ function renderHtml(title, body, options = {}) {
         display: inline-flex;
         align-items: center;
         gap: 9px;
-        background: #0f0f0f;
-        border: 1px solid #2e2e2e;
-        padding: 8px 11px;
-        border-radius: 999px;
+        padding: 0;
       }
       .identity-label {
         color: var(--text-muted);
         font-size: 0.9rem;
         letter-spacing: 0.01em;
       }
-      .link-symbol {
-        display: inline-grid;
-        place-items: center;
-        width: 28px;
-        height: 28px;
-        border-radius: 999px;
-        border: 1px solid #314286;
-        background: rgba(142, 162, 255, 0.18);
-        color: #dce3ff;
+      .link-word {
+        color: #9ea9d9;
+        font-size: 0.82rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
         font-weight: 700;
       }
       h1 {
@@ -288,7 +281,6 @@ function renderHtml(title, body, options = {}) {
         height: 28px;
         border-radius: 999px;
         object-fit: cover;
-        border: 1px solid rgba(255, 255, 255, 0.14);
       }
       .guild-fallback {
         display: inline-grid;
