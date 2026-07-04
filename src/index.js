@@ -187,7 +187,7 @@ function renderHtml(title, body, options = {}) {
           ${guildIdentity}
           <span class="identity-label">${safeGuildName}</span>
         </div>
-        <span class="link-word" aria-hidden="true">linked to</span>
+        <span class="link-icon" aria-hidden="true">🔗</span>
         <div class="identity-block">
           <img class="steam-logo" src="https://store.steampowered.com/favicon.ico" alt="Steam logo" />
           <span class="identity-label">Steam</span>
@@ -255,12 +255,11 @@ function renderHtml(title, body, options = {}) {
         font-size: 0.9rem;
         letter-spacing: 0.01em;
       }
-      .link-word {
-        color: #9ea9d9;
-        font-size: 0.82rem;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        font-weight: 700;
+      .link-icon {
+        font-size: 0.95rem;
+        line-height: 1;
+        filter: saturate(0.9);
+        opacity: 0.9;
       }
       h1 {
         margin: 0 0 8px;
