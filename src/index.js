@@ -195,7 +195,7 @@ function renderHtml(title, body, options = {}) {
       </div>`
     : "";
   const successChip = options.showSuccessChip
-    ? '<div class="status-chip"><span class="status-dot" aria-hidden="true"></span>Verification complete</div>'
+    ? '<div class="status-chip"><span class="status-dot" aria-hidden="true"></span>Account linked</div>'
     : "";
 
   return `<!doctype html>
@@ -207,110 +207,108 @@ function renderHtml(title, body, options = {}) {
     <style>
       :root {
         color-scheme: dark;
-        --bg-1: #11131a;
-        --bg-2: #1a1d27;
-        --card: rgba(43, 45, 49, 0.94);
-        --card-border: rgba(87, 92, 102, 0.45);
-        --text-main: #f2f3f5;
-        --text-muted: #b5bac1;
-        --brand: #5865f2;
-        --brand-soft: rgba(88, 101, 242, 0.25);
-        --success: #3ba55d;
+        --bg: #050505;
+        --bg-soft: #0d0d0d;
+        --card: #111111;
+        --card-border: #272727;
+        --text-main: #f6f6f6;
+        --text-muted: #b8b8b8;
+        --accent: #8ea2ff;
+        --success: #3ad07a;
       }
       body {
         margin: 0;
-        font-family: "gg sans", "Noto Sans", "Segoe UI", sans-serif;
+        font-family: "Inter", "Segoe UI", sans-serif;
         background:
-          radial-gradient(1100px 500px at 0% -15%, rgba(88, 101, 242, 0.2), transparent 60%),
-          radial-gradient(900px 440px at 100% 0%, rgba(59, 165, 93, 0.18), transparent 58%),
-          linear-gradient(140deg, var(--bg-1) 0%, var(--bg-2) 60%, #1f2230 100%);
+          radial-gradient(720px 340px at 50% -14%, rgba(142, 162, 255, 0.13), transparent 62%),
+          linear-gradient(180deg, #030303 0%, var(--bg) 48%, var(--bg-soft) 100%);
         color: var(--text-main);
         min-height: 100vh;
         display: grid;
         place-items: center;
       }
       .card {
-        width: min(92vw, 640px);
+        width: min(92vw, 560px);
         margin: 24px;
         border: 1px solid var(--card-border);
-        background: var(--card);
-        border-radius: 18px;
-        box-shadow: 0 26px 70px rgba(0, 0, 0, 0.45);
-        padding: 30px;
-        backdrop-filter: blur(7px);
+        background: linear-gradient(180deg, #141414 0%, var(--card) 100%);
+        border-radius: 16px;
+        box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+        padding: 26px;
       }
       .identity-row {
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 12px;
-        margin: 0 0 18px;
+        gap: 10px;
+        margin: 0 0 16px;
+        flex-wrap: wrap;
       }
       .identity-block {
         display: inline-flex;
         align-items: center;
-        gap: 10px;
-        background: rgba(31, 33, 36, 0.72);
-        border: 1px solid rgba(87, 92, 102, 0.4);
-        padding: 8px 12px;
+        gap: 9px;
+        background: #0f0f0f;
+        border: 1px solid #2e2e2e;
+        padding: 8px 11px;
         border-radius: 999px;
       }
       .identity-label {
         color: var(--text-muted);
-        font-size: 0.94rem;
+        font-size: 0.9rem;
         letter-spacing: 0.01em;
       }
       .link-symbol {
         display: inline-grid;
         place-items: center;
-        width: 30px;
-        height: 30px;
+        width: 28px;
+        height: 28px;
         border-radius: 999px;
-        border: 1px solid var(--brand-soft);
-        background: rgba(88, 101, 242, 0.16);
-        color: #d8ddff;
+        border: 1px solid #314286;
+        background: rgba(142, 162, 255, 0.18);
+        color: #dce3ff;
         font-weight: 700;
       }
       h1 {
-        margin: 0 0 10px;
-        font-size: clamp(1.35rem, 2vw, 1.7rem);
+        margin: 0 0 8px;
+        font-size: clamp(1.3rem, 2vw, 1.65rem);
         letter-spacing: 0.01em;
       }
       p {
         margin: 0;
-        line-height: 1.55;
+        line-height: 1.5;
         color: var(--text-muted);
       }
       a {
-        color: #a6b0ff;
+        color: var(--accent);
       }
       .guild-icon,
       .steam-logo {
-        width: 30px;
-        height: 30px;
+        width: 28px;
+        height: 28px;
         border-radius: 999px;
         object-fit: cover;
-        border: 1px solid rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.14);
       }
       .guild-fallback {
         display: inline-grid;
         place-items: center;
-        font-size: 0.85rem;
+        font-size: 0.82rem;
         font-weight: 700;
         color: #ffffff;
-        background: linear-gradient(145deg, #5865f2, #3d4ac9);
+        background: linear-gradient(145deg, #4656b5, #2f3c8c);
       }
       .status-chip {
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        margin: 0 0 12px;
-        border: 1px solid rgba(59, 165, 93, 0.45);
-        background: rgba(59, 165, 93, 0.15);
-        color: #c9f5d5;
+        margin: 0 0 11px;
+        border: 1px solid rgba(58, 208, 122, 0.45);
+        background: rgba(58, 208, 122, 0.12);
+        color: #c8f7db;
         border-radius: 999px;
-        padding: 7px 12px;
-        font-size: 0.85rem;
+        padding: 6px 11px;
+        font-size: 0.78rem;
         letter-spacing: 0.02em;
         text-transform: uppercase;
         font-weight: 700;
@@ -320,18 +318,11 @@ function renderHtml(title, body, options = {}) {
         height: 8px;
         border-radius: 999px;
         background: var(--success);
-        box-shadow: 0 0 12px rgba(59, 165, 93, 0.9);
+        box-shadow: 0 0 10px rgba(58, 208, 122, 0.8);
       }
       @media (max-width: 560px) {
         .card {
-          padding: 22px;
-        }
-        .identity-row {
-          flex-direction: column;
-          gap: 8px;
-        }
-        .link-symbol {
-          transform: rotate(90deg);
+          padding: 22px 18px;
         }
       }
     </style>
